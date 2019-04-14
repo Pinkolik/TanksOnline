@@ -12,7 +12,7 @@ public class HelloMessage {
         this.name = name;
     }
 
-    String getName()
+    public String getName()
     {
         return name;
     }

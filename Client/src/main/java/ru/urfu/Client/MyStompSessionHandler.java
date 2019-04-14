@@ -20,7 +20,7 @@ public class MyStompSessionHandler extends StompSessionHandlerAdapter {
         logger.info("New session established : " + session.getSessionId());
         session.subscribe("/topic/greetings", this);
         logger.info("Subscribed to /topic/messages");
-        session.send("/app/hello", "Client");
+        session.send("/app/hello", getSampleHelloMessage());
         logger.info("Message sent to websocket server");
     }
 
