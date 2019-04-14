@@ -9,15 +9,17 @@ import org.springframework.messaging.converter.SimpleMessageConverter;
 import org.springframework.messaging.simp.stomp.StompSession;
 import org.springframework.messaging.simp.stomp.StompSessionHandler;
 import org.springframework.scheduling.concurrent.ConcurrentTaskScheduler;
+import org.springframework.stereotype.Component;
 import org.springframework.web.socket.client.WebSocketClient;
 import org.springframework.web.socket.client.standard.StandardWebSocketClient;
 import org.springframework.web.socket.messaging.WebSocketStompClient;
 
+@Component
 public class StompClient {
 
     private static String URL = "ws://localhost:8080/gs-guide-webscoket";
 
-    public static void main(String[] args) throws Exception{
+    public StompClient() throws Exception{
         WebSocketClient client = new StandardWebSocketClient();
         WebSocketStompClient stompClient = new WebSocketStompClient(client);
 
