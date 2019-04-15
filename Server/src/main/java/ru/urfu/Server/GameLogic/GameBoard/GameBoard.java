@@ -1,11 +1,13 @@
 package ru.urfu.Server.GameLogic.GameBoard;
 
+import org.springframework.stereotype.Component;
 import ru.urfu.Server.GameLogic.GameObjects.IGameObject;
 
 import java.awt.*;
 import java.util.HashMap;
 import java.util.Map;
 
+@Component
 public class GameBoard implements IGameBoard {
     private GameState gameState = GameState.WaitingForPlayers;
     private Map<Point, IGameObject> map;
