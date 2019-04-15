@@ -1,8 +1,9 @@
 package ru.urfu.Server.GameLogic.GameObjects;
 
 public interface IGameObject {
-    boolean IsDestructible = false;
-    boolean CanProjectilePass = false;
-    boolean CanPlayerPass = false;
-    int Health = 0;
+    int getHealth();
+    boolean isDestructible();
+    boolean canProjectilePass();
+    boolean canPlayerPass();
+    void hit(int damage);
 }
