@@ -1,20 +1,22 @@
 package ru.urfu.Server.GameLogic.GameBoard;
 
-import org.springframework.stereotype.Component;
+import ru.urfu.Server.GameLogic.GameObjects.Brick;
 import ru.urfu.Server.GameLogic.GameObjects.IGameObject;
+import org.springframework.stereotype.Component;
 
 import java.awt.*;
 import java.util.HashMap;
 import java.util.Map;
 
-@Component
 public class GameBoard implements IGameBoard {
     private GameState gameState = GameState.WaitingForPlayers;
-    private Map<Point, IGameObject> map;
+    private IGameObject[][] map;
 
-    public GameBoard(int width, int height)
-    {
-        map = new HashMap<Point, IGameObject>();
+    public GameBoard() {
+        map = new IGameObject[10][10];
+        for (int i = 0; i < 10; i++)
+            for (int j = 0; j < 10; j++)
+                map[i][j] = new Brick();
     }
 
     @Override
@@ -23,7 +25,7 @@ public class GameBoard implements IGameBoard {
     }
 
     @Override
-    public Map<Point, IGameObject> getMap() {
+    public IGameObject[][] getMap() {
         return map;
     }
 

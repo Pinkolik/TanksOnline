@@ -1,7 +1,10 @@
 package ru.urfu.Server.GameLogic.GameObjects;
 
+import org.springframework.stereotype.Component;
+
 public class Brick implements IGameObject {
     private int health = 10;
+    private String type = "brick";
 
     @Override
     public int getHealth() {

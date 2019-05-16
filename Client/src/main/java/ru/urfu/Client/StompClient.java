@@ -14,19 +14,19 @@ import org.springframework.web.socket.client.WebSocketClient;
 import org.springframework.web.socket.client.standard.StandardWebSocketClient;
 import org.springframework.web.socket.messaging.WebSocketStompClient;
 
-@Component
 public class StompClient {
 
-    private static String URL = "ws://localhost:8080/gs-guide-webscoket";
+    private Logger logger = LogManager.getLogger(StompClient.class);
+    private static String URL = "ws://localhost:8080/game";
 
-    public StompClient() throws Exception{
+    public StompClient() throws Exception {
         WebSocketClient client = new StandardWebSocketClient();
         WebSocketStompClient stompClient = new WebSocketStompClient(client);
 
         stompClient.setMessageConverter(new MappingJackson2MessageConverter());
 
         StompSessionHandler sessionHandler = new MyStompSessionHandler();
-        StompSession session = stompClient.connect(URL, sessionHandler).get();
+        StompSession stompSession = stompClient.connect(URL, sessionHandler).get();
 
         new Scanner(System.in).nextLine(); // Don't close immediately.
     }

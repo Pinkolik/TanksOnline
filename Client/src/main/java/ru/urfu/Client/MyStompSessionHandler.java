@@ -6,8 +6,9 @@ import org.springframework.messaging.simp.stomp.StompCommand;
 import org.springframework.messaging.simp.stomp.StompHeaders;
 import org.springframework.messaging.simp.stomp.StompSession;
 import org.springframework.messaging.simp.stomp.StompSessionHandlerAdapter;
-import ru.urfu.Client.Greeting;
-import ru.urfu.Client.HelloMessage;
+import ru.urfu.Server.GameLogic.GameBoard.GameBoard;
+import ru.urfu.Server.GameLogic.GameBoard.IGameBoard;
+import ru.urfu.Server.GameLogic.GameBoard.PlayerAction;
 
 import java.lang.reflect.Type;
 
@@ -18,10 +19,10 @@ public class MyStompSessionHandler extends StompSessionHandlerAdapter {
     @Override
     public void afterConnected(StompSession session, StompHeaders connectedHeaders) {
         logger.info("New session established : " + session.getSessionId());
-        session.subscribe("/topic/greetings", this);
-        logger.info("Subscribed to /topic/messages");
-        session.send("/app/hello", getSampleHelloMessage());
-        logger.info("Message sent to websocket server");
+        session.subscribe("/topic/gameboard", this);
+        logger.info("Subscribed to /topic/gameboard");
+        session.send("/app/action", PlayerAction.Connected);
+        logger.info("Sent action to /app/action");
     }
 
     @Override
@@ -31,16 +32,13 @@ public class MyStompSessionHandler extends StompSessionHandlerAdapter {
 
     @Override
     public Type getPayloadType(StompHeaders headers) {
-        return Greeting.class;
+        return GameBoard.class;
     }
 
     @Override
     public void handleFrame(StompHeaders headers, Object payload) {
-        Greeting greeting = (Greeting) payload;
-        logger.info("Received : " + greeting.getContent());
-    }
-
-    private HelloMessage getSampleHelloMessage() {
-        return new HelloMessage("Client");
+        IGameBoard gameBoard = (GameBoard) payload;
+        logger.info("Received from server))))");
+        logger.info(((GameBoard) payload).getGameState());
     }
 }

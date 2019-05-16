@@ -1,5 +1,6 @@
 package ru.urfu.Server.GameLogic.GameBoard;
 
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import ru.urfu.Server.GameLogic.GameObjects.IGameObject;
 import ru.urfu.Server.GameLogic.GameObjects.IPlayer;
 
@@ -8,7 +9,7 @@ import java.util.Map;
 
 public interface IGameBoard {
     GameState getGameState();
-    Map<Point, IGameObject> getMap();
+    IGameObject[][] getMap();
     void startGame();
     void processPlayerAction(int playerId, PlayerAction action);
     void iterate();
