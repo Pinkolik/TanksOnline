@@ -10,8 +10,9 @@ public class ClientApplication {
 
 	public static void main(String[] args) throws Exception {
 		new SpringApplicationBuilder(ClientApplication.class)
+				.headless(false)
 				.web(WebApplicationType.NONE)
 				.run(args);
+		GameForm gameForm = new GameForm();
 	}
-
 }

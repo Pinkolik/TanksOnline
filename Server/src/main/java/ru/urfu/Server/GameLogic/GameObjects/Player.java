@@ -6,8 +6,11 @@ public class Player implements IGameObject, IPlayer {
     private String name;
     private int health;
 
-    public Player(int id, String name)
-    {
+    private Player() {
+    }
+
+
+    public Player(int id, String name) {
         this.id = id;
         this.name = name;
         this.health = 100;

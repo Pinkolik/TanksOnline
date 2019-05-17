@@ -8,7 +8,8 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo;
         include = JsonTypeInfo.As.PROPERTY,
         property = "type")
 @JsonSubTypes({
-        @JsonSubTypes.Type(value = Brick.class, name = "brick") })
+        @JsonSubTypes.Type(value = Brick.class, name = "brick"),
+        @JsonSubTypes.Type(value = Player.class, name = "player")})
 public interface IGameObject {
     int getHealth();
     boolean isDestructible();
