@@ -2,20 +2,22 @@ package ru.urfu.Server.GameLogic.GameBoard;
 
 import ru.urfu.Server.GameLogic.GameObjects.*;
 
+import javax.swing.*;
 import java.awt.*;
-import java.util.ArrayList;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Random;
 
 public class GameBoard implements IGameBoard {
     private GameState gameState = GameState.WaitingForPlayers;
     private IGameObject[][] map;
-    private ArrayList<IPlayer> players = new ArrayList<>();
-    private HashMap<String, Point> playersPositions = new HashMap<>();
+    private HashMap<IPlayer, Point> playersPositions = new HashMap<>();
+    private HashMap<IProjectile, Point> projectilesPositions = new HashMap<>();
     private int width = 10;
     private int height = 10;
     private int playersCount = 0;
+    private String type = "gameBoard";
 
     public GameBoard() {
         map = new IGameObject[width][height];
@@ -27,6 +29,8 @@ public class GameBoard implements IGameBoard {
             map[0][j] = new Brick();
             map[width - 1][j] = new Brick();
         }
+        Timer iterateTimer = new Timer(500, new IterateTimerListener());
+        iterateTimer.start();
     }
 
     @Override
@@ -40,8 +44,13 @@ public class GameBoard implements IGameBoard {
     }
 
     @Override
-    public ArrayList<IPlayer> getPlayers() {
-        return players;
+    public HashMap<IPlayer, Point> getPlayersPositions() {
+        return playersPositions;
+    }
+
+    @Override
+    public HashMap<IProjectile, Point> getProjectilesPositions() {
+        return projectilesPositions;
     }
 
     @Override
@@ -62,18 +71,48 @@ public class GameBoard implements IGameBoard {
                 movePlayer(playerAction);
                 break;
             case Shoot:
+                putProjectileOnBoard(playerAction);
                 break;
             case Update:
                 break;
         }
     }
 
+    private void putProjectileOnBoard(PlayerAction playerAction) {
+        IPlayer player = playersPositions
+                .keySet()
+                .stream()
+                .filter(p->p.getName().equals(playerAction.getPlayerName()))
+                .findAny()
+                .get();
+        Point playerPosition = playersPositions.get(player);
+        Direction playerDirection = player.getDirection();
+        Point projectilePosition = null;
+        IProjectile projectile = new Projectile(10, playerAction.getPlayerName());
+        switch (playerDirection) {
+            case Up:
+                projectile.setDirection(Direction.Up);
+                projectilePosition = new Point(playerPosition.x, playerPosition.y - 1);
+                break;
+            case Down:
+                projectile.setDirection(Direction.Down);
+                projectilePosition = new Point(playerPosition.x, playerPosition.y + 1);
+                break;
+            case Left:
+                projectile.setDirection(Direction.Left);
+                projectilePosition = new Point(playerPosition.x - 1, playerPosition.y);
+                break;
+            case Right:
+                projectile.setDirection(Direction.Right);
+                projectilePosition = new Point(playerPosition.x + 1, playerPosition.y);
+                break;
+        }
+        projectilesPositions.put(projectile, projectilePosition);
+    }
+
     private void removePlayer(PlayerAction playerAction) {
-        Point playerPosition = playersPositions.get(playerAction.getPlayerName());
-        playersPositions.remove(playerAction.getPlayerName());
-        map[playerPosition.x][playerPosition.y] = null;
-        players.removeIf(p -> p.getName().equals(playerAction.getPlayerName()));
-        if (players.size() == 0)
+        playersPositions.entrySet().removeIf(e -> e.getKey().getName().equals(playerAction.getPlayerName()));
+        if (playersPositions.size() == 0)
             gameState = GameState.WaitingForPlayers;
     }
 
@@ -86,16 +125,19 @@ public class GameBoard implements IGameBoard {
             x = random.nextInt(width);
             y = random.nextInt(height);
         } while (map[x][y] != null && !map[x][y].canPlayerPass());
-        Player player = new Player(playersCount++, playerAction.getPlayerName());
-        players.add(player);
-        playersPositions.put(playerAction.getPlayerName(), new Point(x, y));
-        map[x][y] = player;
+        IPlayer player = new Player(playerAction.getPlayerName());
+        playersPositions.put(player, new Point(x, y));
     }
 
     private void movePlayer(PlayerAction playerAction) {
-        Point playerPosition = playersPositions.get(playerAction.getPlayerName());
+        IPlayer player = playersPositions
+                .keySet()
+                .stream()
+                .filter(p -> p.getName().equals(playerAction.getPlayerName()))
+                .findAny()
+                .get();
+        Point playerPosition = playersPositions.get(player);
         Point newPos = null;
-        IGameObject player = map[playerPosition.x][playerPosition.y];
         switch (playerAction.getPlayerActionEnum()) {
             case MoveUp:
                 newPos = new Point(playerPosition.x, playerPosition.y - 1);
@@ -114,15 +156,16 @@ public class GameBoard implements IGameBoard {
                 player.setDirection(Direction.Right);
                 break;
         }
-        if (map[newPos.x][newPos.y] == null || map[newPos.x][newPos.y].canPlayerPass()) {
-            playersPositions.replace(playerAction.getPlayerName(), newPos);
-            map[newPos.x][newPos.y] = map[playerPosition.x][playerPosition.y];
-            map[playerPosition.x][playerPosition.y] = null;
-        }
+        if (map[newPos.x][newPos.y] == null || map[newPos.x][newPos.y].canPlayerPass())
+            playersPositions.replace(player, newPos);
+
     }
 
-    @Override
-    public void iterate() {
+    private class IterateTimerListener implements ActionListener {
 
+        @Override
+        public void actionPerformed(ActionEvent e) {
+
+        }
     }
 }

@@ -9,7 +9,8 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo;
         property = "type")
 @JsonSubTypes({
         @JsonSubTypes.Type(value = Brick.class, name = "brick"),
-        @JsonSubTypes.Type(value = Player.class, name = "player")})
+        @JsonSubTypes.Type(value = Player.class, name = "player"),
+        @JsonSubTypes.Type(value = Projectile.class, name = "projectile")})
 public interface IGameObject {
     Direction getDirection();
     void setDirection(Direction direction);

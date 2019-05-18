@@ -9,8 +9,6 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo;
         property = "type")
 @JsonSubTypes({
         @JsonSubTypes.Type(value = Player.class, name = "player")})
-public interface IPlayer {
-    int getId();
-
+public interface IPlayer extends IGameObject {
     String getName();
 }

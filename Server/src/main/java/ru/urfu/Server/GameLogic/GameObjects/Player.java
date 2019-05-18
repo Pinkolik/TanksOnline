@@ -3,22 +3,46 @@ package ru.urfu.Server.GameLogic.GameObjects;
 import java.util.Objects;
 
 public class Player implements IGameObject, IPlayer {
-
-    private int id;
     private String name;
     private int health;
     private String type = "player";
     private Direction direction = Direction.Up;
 
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        Player player = (Player) o;
+        return name.equals(player.name);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(name);
+    }
+
     private Player() {
     }
 
-    public Player(int id, String name) {
-        this.id = id;
+    public Player(String name, int health) {
+        this.name = name;
+        this.health = health;
+    }
+
+    public Player(String name) {
         this.name = name;
         this.health = 100;
     }
 
+    @Override
+    public String toString() {
+        return "{" +
+                "\"type\":\"" + type + "\"" +
+                ",\"name\":\"" + name + '\"' +
+                ",\"health\":" + health +
+                ",\"direction\":\"" + direction +
+                "\"}";
+    }
 
     @Override
     public Direction getDirection() {
@@ -53,11 +77,6 @@ public class Player implements IGameObject, IPlayer {
     @Override
     public void hit(int damage) {
         health -= damage;
-    }
-
-    @Override
-    public int getId() {
-        return id;
     }
 
     @Override

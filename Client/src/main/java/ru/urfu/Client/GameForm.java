@@ -5,34 +5,33 @@ import org.springframework.core.io.Resource;
 import ru.urfu.Server.GameLogic.GameBoard.IGameBoard;
 import ru.urfu.Server.GameLogic.GameBoard.PlayerAction;
 import ru.urfu.Server.GameLogic.GameBoard.PlayerActionEnum;
-import ru.urfu.Server.GameLogic.GameObjects.Brick;
-import ru.urfu.Server.GameLogic.GameObjects.Direction;
-import ru.urfu.Server.GameLogic.GameObjects.IGameObject;
-import ru.urfu.Server.GameLogic.GameObjects.Player;
+import ru.urfu.Server.GameLogic.GameObjects.*;
 
 import javax.imageio.ImageIO;
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.*;
-import java.awt.geom.AffineTransform;
 import java.awt.image.BufferedImage;
+import java.nio.Buffer;
 import java.util.HashMap;
-import java.util.HashSet;
+import java.util.Map;
 
 public class GameForm extends JFrame {
     private HashMap<Class, BufferedImage> images = new HashMap<>();
-    private BufferedImage brickImage;
-    private BufferedImage playerImage;
     private StompClient stompClient;
     private String playerName = "Pinkolik";
     private String actionUrl = "/app/action";
     private IGameObject[][] map;
+    private HashMap<IPlayer, Point> playersPositions;
+    private HashMap<IProjectile, Point> projectilesPositions;
 
     private void initializeResources() throws Exception {
         Resource resource = new ClassPathResource("brick.png");
         images.put(Brick.class, ImageIO.read(resource.getFile()));
         resource = new ClassPathResource("player.png");
         images.put(Player.class, ImageIO.read(resource.getFile()));
+        resource = new ClassPathResource("projectile.png");
+        images.put(Projectile.class, ImageIO.read(resource.getFile()));
     }
 
     public GameForm() throws Exception {
@@ -49,6 +48,8 @@ public class GameForm extends JFrame {
 
     public void drawGameBoard(IGameBoard gameBoard) {
         IGameObject[][] newMap = gameBoard.getMap();
+        HashMap<IPlayer, Point> newPlayersPosition = gameBoard.getPlayersPositions();
+        HashMap<IProjectile, Point> newProjectilesPositions = gameBoard.getProjectilesPositions();
         int width = newMap.length;
         int height = newMap[0].length;
         int blockWidth = getWidth() / width;
@@ -76,8 +77,66 @@ public class GameForm extends JFrame {
                             i * blockWidth, j * blockHeight,
                             blockWidth, blockHeight, null);
             }
-
         map = newMap;
+        for (Map.Entry<IPlayer, Point> entry : newPlayersPosition.entrySet()) {
+            Point point = entry.getValue();
+            IPlayer player = entry.getKey();
+            if (playersPositions != null) {
+                Point previousPoint = playersPositions.get(player);
+                IPlayer previousPlayer = playersPositions
+                        .keySet()
+                        .stream()
+                        .filter(p -> p.getName().equals(player.getName()))
+                        .findAny()
+                        .get();
+                if (!previousPoint.equals(point) || player.getDirection() != previousPlayer.getDirection()) {
+                    g.clearRect(previousPoint.x * blockWidth, previousPoint.y * blockHeight, blockWidth, blockHeight);
+                    if (newMap[previousPoint.x][previousPoint.y] != null)
+                        g.drawImage(rotateImage(images.get(newMap[previousPoint.x][previousPoint.y].getClass()),
+                                newMap[previousPoint.x][previousPoint.y].getDirection()),
+                                previousPoint.x * blockWidth, previousPoint.y * blockHeight,
+                                blockWidth, blockHeight, null);
+                    g.drawImage(rotateImage(images.get(player.getClass()), player.getDirection()),
+                            point.x * blockWidth, point.y * blockHeight,
+                            blockWidth, blockHeight, null);
+                }
+
+            } else
+                g.drawImage(rotateImage(images.get(player.getClass()), player.getDirection()),
+                        point.x * blockWidth, point.y * blockHeight,
+                        blockWidth, blockHeight, null);
+        }
+        playersPositions = newPlayersPosition;
+
+        for (Map.Entry<IProjectile, Point> entry : newProjectilesPositions.entrySet()) {
+            Point point = entry.getValue();
+            IProjectile projectile = entry.getKey();
+            if (projectilesPositions != null) {
+                Point previousPoint = projectilesPositions.get(projectile);
+                IProjectile previousProjectile = projectilesPositions
+                        .keySet()
+                        .stream()
+                        .filter(p -> p.getOwner().equals(projectile.getOwner()))
+                        .findAny()
+                        .get();
+                if (!previousPoint.equals(point)) {
+                    g.clearRect(previousPoint.x * blockWidth, previousPoint.y * blockHeight, blockWidth, blockHeight);
+                    if (newMap[previousPoint.x][previousPoint.y] != null)
+                        g.drawImage(rotateImage(images.get(newMap[previousPoint.x][previousPoint.y].getClass()),
+                                newMap[previousPoint.x][previousPoint.y].getDirection()),
+                                previousPoint.x * blockWidth, previousPoint.y * blockHeight,
+                                blockWidth, blockHeight, null);
+                    g.drawImage(rotateImage(images.get(projectile.getClass()), projectile.getDirection()),
+                            point.x * blockWidth, point.y * blockHeight,
+                            blockWidth, blockHeight, null);
+                }
+
+            } else
+                g.drawImage(rotateImage(images.get(projectile.getClass()), projectile.getDirection()),
+                        point.x * blockWidth, point.y * blockHeight,
+                        blockWidth, blockHeight, null);
+        }
+        projectilesPositions = newProjectilesPositions;
         g.dispose();
     }
 

@@ -34,19 +34,21 @@ public class MyStompSessionHandler extends StompSessionHandlerAdapter {
 
     @Override
     public void handleException(StompSession session, StompCommand command, StompHeaders headers, byte[] payload, Throwable exception) {
+        logger.error(new String(payload));
         logger.error("Got an exception", exception);
     }
 
     @Override
     public Type getPayloadType(StompHeaders headers) {
-        return GameBoard.class;
+        return IGameBoard.class;
     }
 
     @Override
     public void handleFrame(StompHeaders headers, Object payload) {
-        IGameBoard gameBoard = (GameBoard) payload;
+        IGameBoard gameBoard = (IGameBoard) payload;
         gameForm.drawGameBoard(gameBoard);
+        //gameForm.drawGameBoardAnother(gameBoard);
         logger.info("Received from server))))");
-        logger.info(((GameBoard) payload).getGameState());
+        logger.info(((IGameBoard) payload).getGameState());
     }
 }
