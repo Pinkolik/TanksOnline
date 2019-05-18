@@ -11,6 +11,8 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo;
         @JsonSubTypes.Type(value = Brick.class, name = "brick"),
         @JsonSubTypes.Type(value = Player.class, name = "player")})
 public interface IGameObject {
+    Direction getDirection();
+    void setDirection(Direction direction);
     int getHealth();
     boolean isDestructible();
     boolean canProjectilePass();

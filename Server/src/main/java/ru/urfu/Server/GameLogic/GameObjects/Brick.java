@@ -7,6 +7,16 @@ public class Brick implements IGameObject {
     private String type = "brick";
 
     @Override
+    public Direction getDirection() {
+        return Direction.Up;
+    }
+
+    @Override
+    public void setDirection(Direction direction) {
+
+    }
+
+    @Override
     public int getHealth() {
         return health;
     }

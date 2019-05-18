@@ -1,14 +1,17 @@
 package ru.urfu.Server.GameLogic.GameObjects;
 
+import java.util.Objects;
+
 public class Player implements IGameObject, IPlayer {
 
     private int id;
     private String name;
     private int health;
+    private String type = "player";
+    private Direction direction = Direction.Up;
 
     private Player() {
     }
-
 
     public Player(int id, String name) {
         this.id = id;
@@ -16,6 +19,16 @@ public class Player implements IGameObject, IPlayer {
         this.health = 100;
     }
 
+
+    @Override
+    public Direction getDirection() {
+        return direction;
+    }
+
+    @Override
+    public void setDirection(Direction direction) {
+        this.direction = direction;
+    }
 
     @Override
     public int getHealth() {
