@@ -33,17 +33,17 @@ public class GameForm extends JFrame {
 
     private void initializeResources() throws Exception {
         Resource resource = new ClassPathResource("brick.png");
-        images.put(Brick.class, ImageIO.read(resource.getFile()));
+        images.put(Brick.class, ImageIO.read(resource.getInputStream()));
         resource = new ClassPathResource("player.png");
-        images.put(Player.class, ImageIO.read(resource.getFile()));
+        images.put(Player.class, ImageIO.read(resource.getInputStream()));
         resource = new ClassPathResource("projectile.png");
-        images.put(Projectile.class, ImageIO.read(resource.getFile()));
+        images.put(Projectile.class, ImageIO.read(resource.getInputStream()));
         resource = new ClassPathResource("bush.png");
-        images.put(Bush.class, ImageIO.read(resource.getFile()));
+        images.put(Bush.class, ImageIO.read(resource.getInputStream()));
         resource = new ClassPathResource("rock.png");
-        images.put(Rock.class, ImageIO.read(resource.getFile()));
+        images.put(Rock.class, ImageIO.read(resource.getInputStream()));
         resource = new ClassPathResource("water.png");
-        images.put(Water.class, ImageIO.read(resource.getFile()));
+        images.put(Water.class, ImageIO.read(resource.getInputStream()));
     }
 
     public GameForm() throws Exception {
@@ -111,13 +111,30 @@ public class GameForm extends JFrame {
                     blockWidth, blockHeight, null);
     }
 
+    private void drawObjectOnTop(Graphics g, IGameObject[][] newMap, Point point) {
+        IGameObject iGameObject = newMap[point.x][point.y];
+        if (iGameObject != null && iGameObject.canPlayerPass())
+            g.drawImage(rotateImage(images.get(iGameObject.getClass()), iGameObject.getDirection()),
+                    point.x * blockWidth, point.y * blockHeight,
+                    blockWidth, blockHeight, null);
+
+    }
+
     private void drawPlayers(IGameBoard gameBoard, Graphics g) {
         HashMap<IPlayer, Point> newPlayersPosition = gameBoard.getPlayersPositions();
         IGameObject[][] newMap = gameBoard.getMap();
+        if (playersPositions!= null)
+            for (Map.Entry<IPlayer, Point> entry : playersPositions.entrySet())
+            {
+                Point point = entry.getValue();
+                IPlayer player = entry.getKey();
+                if (!newPlayersPosition.containsKey(player))
+                    redrawBackgroundObject(g, newMap, point);
+            }
         for (Map.Entry<IPlayer, Point> entry : newPlayersPosition.entrySet()) {
             Point point = entry.getValue();
             IPlayer player = entry.getKey();
-            if (playersPositions != null) {
+            if (playersPositions != null && playersPositions.containsKey(player)) {
                 Point previousPoint = playersPositions.get(player);
                 IPlayer previousPlayer = playersPositions
                         .keySet()
@@ -130,6 +147,7 @@ public class GameForm extends JFrame {
                     g.drawImage(rotateImage(images.get(player.getClass()), player.getDirection()),
                             point.x * blockWidth, point.y * blockHeight,
                             blockWidth, blockHeight, null);
+                    drawObjectOnTop(g, newMap, point);
                 }
 
             } else

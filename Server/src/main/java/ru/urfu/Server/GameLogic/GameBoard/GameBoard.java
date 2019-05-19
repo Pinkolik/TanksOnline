@@ -94,7 +94,7 @@ public class GameBoard implements IGameBoard {
         Point playerPosition = playersPositions.get(player);
         Direction playerDirection = player.getDirection();
         Point projectilePosition = new Point(playerPosition.x, playerPosition.y);
-        IProjectile projectile = new Projectile(5, playerAction.getPlayerName());
+        IProjectile projectile = new Projectile(50, playerAction.getPlayerName());
         switch (playerDirection) {
             case Up:
                 projectile.setDirection(Direction.Up);
@@ -119,11 +119,12 @@ public class GameBoard implements IGameBoard {
             for (int j = 0; j < height; j++)
                 if (map[i][j] != null && map[i][j].getHealth() <= 0)
                     map[i][j] = null;
-
-        for (IPlayer player : playersPositions.keySet()) {
-            if (player.getHealth() <= 0)
-                playersPositions.remove(player);
+        HashMap<IPlayer, Point> newPlayersPositions = new HashMap<>();
+        for (Map.Entry<IPlayer, Point> entry : playersPositions.entrySet()) {
+            if (entry.getKey().getHealth() > 0)
+                newPlayersPositions.put(entry.getKey(), entry.getValue());
         }
+        playersPositions = newPlayersPositions;
     }
 
     private void updateProjectilesPositions() {
@@ -151,10 +152,9 @@ public class GameBoard implements IGameBoard {
                 continue;
             }
             for (Map.Entry<IPlayer, Point> playerPointEntry : playersPositions.entrySet()) {
-                if (playerPointEntry.getValue() == newProjectilePosition) {
+                if (playerPointEntry.getValue().equals(newProjectilePosition)) {
                     playerPointEntry.getKey().hit(projectile.getDamage());
                     projectilesPositions.remove(projectile);
-                    continue;
                 }
             }
 
@@ -220,6 +220,8 @@ public class GameBoard implements IGameBoard {
                 break;
         }
         if (isOutOfBounds(newPos))
+            return;
+        if (playersPositions.containsValue(newPos))
             return;
         if (map[newPos.x][newPos.y] == null || map[newPos.x][newPos.y].canPlayerPass())
             playersPositions.replace(player, newPos);
