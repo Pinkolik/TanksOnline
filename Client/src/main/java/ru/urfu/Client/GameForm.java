@@ -105,7 +105,7 @@ public class GameForm extends JFrame {
     private void redrawBackgroundObject(Graphics g, IGameObject[][] newMap, Point previousPoint) {
         g.clearRect(previousPoint.x * blockWidth, previousPoint.y * blockHeight, blockWidth, blockHeight);
         if (newMap[previousPoint.x][previousPoint.y] != null)
-            g.drawImage(rotateImage(images.get(newMap[previousPoint.y].getClass()),
+            g.drawImage(rotateImage(images.get(newMap[previousPoint.x][previousPoint.y].getClass()),
                     newMap[previousPoint.x][previousPoint.y].getDirection()),
                     previousPoint.x * blockWidth, previousPoint.y * blockHeight,
                     blockWidth, blockHeight, null);

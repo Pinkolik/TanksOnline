@@ -1,6 +1,7 @@
 package ru.urfu.Server.GameLogic.GameObjects;
 
 public class Water implements IGameObject {
+    private String type = "water";
     @Override
     public Direction getDirection() {
         return Direction.Up;

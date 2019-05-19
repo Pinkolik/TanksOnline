@@ -1,6 +1,8 @@
 package ru.urfu.Server.GameLogic.GameObjects;
 
 public class Bush implements IGameObject {
+    private String type = "bush";
+
     @Override
     public Direction getDirection() {
         return Direction.Up;

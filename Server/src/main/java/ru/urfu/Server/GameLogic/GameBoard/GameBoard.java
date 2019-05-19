@@ -30,6 +30,9 @@ public class GameBoard implements IGameBoard {
             map[0][j] = new Brick();
             map[width - 1][j] = new Brick();
         }
+        map[1][1] = new Water();
+        map[2][2] = new Rock();
+        map[3][3] = new Bush();
         Timer iterateTimer = new Timer(100, new IterateTimerListener());
         iterateTimer.start();
     }

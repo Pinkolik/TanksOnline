@@ -1,6 +1,7 @@
 package ru.urfu.Server.GameLogic.GameObjects;
 
 public class Rock implements IGameObject {
+    private String type = "rock";
     @Override
     public Direction getDirection() {
         return Direction.Up;
