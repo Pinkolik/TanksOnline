@@ -15,6 +15,7 @@ import java.awt.image.BufferedImage;
 import java.nio.Buffer;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Random;
 
 public class GameForm extends JFrame {
     private HashMap<Class, BufferedImage> images = new HashMap<>();
@@ -28,6 +29,7 @@ public class GameForm extends JFrame {
     private int height;
     private int blockWidth;
     private int blockHeight;
+    private Timer updateTimer;
 
     private void initializeResources() throws Exception {
         Resource resource = new ClassPathResource("brick.png");
@@ -36,9 +38,16 @@ public class GameForm extends JFrame {
         images.put(Player.class, ImageIO.read(resource.getFile()));
         resource = new ClassPathResource("projectile.png");
         images.put(Projectile.class, ImageIO.read(resource.getFile()));
+        resource = new ClassPathResource("bush.png");
+        images.put(Bush.class, ImageIO.read(resource.getFile()));
+        resource = new ClassPathResource("rock.png");
+        images.put(Rock.class, ImageIO.read(resource.getFile()));
+        resource = new ClassPathResource("water.png");
+        images.put(Water.class, ImageIO.read(resource.getFile()));
     }
 
     public GameForm() throws Exception {
+        playerName = Integer.toString(new Random().nextInt(1000));
         initializeResources();
         setSize(500, 500);
         setVisible(true);
@@ -46,8 +55,15 @@ public class GameForm extends JFrame {
         stompClient = new StompClient(this);
         addKeyListener(new MyKeyListener());
         addWindowListener(new MyWindowListener());
-        Timer updateTimer = new Timer(100, new TimerListener());
+        updateTimer = new Timer(50, new TimerListener());
+    }
+
+    public void startTimer() {
         updateTimer.start();
+    }
+
+    public String getPlayerName() {
+        return playerName;
     }
 
     public void drawGameBoard(IGameBoard gameBoard) {

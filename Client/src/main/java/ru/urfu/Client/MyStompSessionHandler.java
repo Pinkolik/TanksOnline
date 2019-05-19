@@ -28,8 +28,9 @@ public class MyStompSessionHandler extends StompSessionHandlerAdapter {
         logger.info("New session established : " + session.getSessionId());
         session.subscribe("/topic/gameboard", this);
         logger.info("Subscribed to /topic/gameboard");
-        session.send("/app/action", new PlayerAction("Pinkolik", PlayerActionEnum.Connected));
+        session.send("/app/action", new PlayerAction(gameForm.getPlayerName(), PlayerActionEnum.Connected));
         logger.info("Sent action to /app/action");
+        gameForm.startTimer();
     }
 
     @Override
@@ -47,7 +48,6 @@ public class MyStompSessionHandler extends StompSessionHandlerAdapter {
     public void handleFrame(StompHeaders headers, Object payload) {
         IGameBoard gameBoard = (IGameBoard) payload;
         gameForm.drawGameBoard(gameBoard);
-        //gameForm.drawGameBoardAnother(gameBoard);
         logger.info("Received from server))))");
         logger.info(((IGameBoard) payload).getGameState());
     }
