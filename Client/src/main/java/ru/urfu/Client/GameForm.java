@@ -24,6 +24,10 @@ public class GameForm extends JFrame {
     private IGameObject[][] map;
     private HashMap<IPlayer, Point> playersPositions;
     private HashMap<IProjectile, Point> projectilesPositions;
+    private int width;
+    private int height;
+    private int blockWidth;
+    private int blockHeight;
 
     private void initializeResources() throws Exception {
         Resource resource = new ClassPathResource("brick.png");
@@ -47,14 +51,81 @@ public class GameForm extends JFrame {
     }
 
     public void drawGameBoard(IGameBoard gameBoard) {
-        IGameObject[][] newMap = gameBoard.getMap();
-        HashMap<IPlayer, Point> newPlayersPosition = gameBoard.getPlayersPositions();
-        HashMap<IProjectile, Point> newProjectilesPositions = gameBoard.getProjectilesPositions();
-        int width = newMap.length;
-        int height = newMap[0].length;
-        int blockWidth = getWidth() / width;
-        int blockHeight = getHeight() / height;
+        updateDrawingSizes(gameBoard);
         Graphics g = this.getGraphics();
+        drawMap(gameBoard, g);
+        drawPlayers(gameBoard, g);
+        drawProjectiles(gameBoard, g);
+
+        g.dispose();
+    }
+
+    private void updateDrawingSizes(IGameBoard gameBoard) {
+        IGameObject[][] newMap = gameBoard.getMap();
+        width = newMap.length;
+        height = newMap[0].length;
+        blockWidth = getWidth() / width;
+        blockHeight = getHeight() / height;
+    }
+
+    private void drawProjectiles(IGameBoard gameBoard, Graphics g) {
+        IGameObject[][] newMap = gameBoard.getMap();
+        HashMap<IProjectile, Point> newProjectilesPositions = gameBoard.getProjectilesPositions();
+        if (projectilesPositions != null)
+            for (Map.Entry<IProjectile, Point> entry : projectilesPositions.entrySet()) {
+                Point point = entry.getValue();
+                redrawBackgroundObject(g, newMap, point);
+            }
+        for (Map.Entry<IProjectile, Point> entry : newProjectilesPositions.entrySet()) {
+            Point point = entry.getValue();
+            IProjectile projectile = entry.getKey();
+            g.drawImage(rotateImage(images.get(projectile.getClass()), projectile.getDirection()),
+                    point.x * blockWidth, point.y * blockHeight,
+                    blockWidth, blockHeight, null);
+        }
+        projectilesPositions = newProjectilesPositions;
+    }
+
+    private void redrawBackgroundObject(Graphics g, IGameObject[][] newMap, Point previousPoint) {
+        g.clearRect(previousPoint.x * blockWidth, previousPoint.y * blockHeight, blockWidth, blockHeight);
+        if (newMap[previousPoint.x][previousPoint.y] != null)
+            g.drawImage(rotateImage(images.get(newMap[previousPoint.y].getClass()),
+                    newMap[previousPoint.x][previousPoint.y].getDirection()),
+                    previousPoint.x * blockWidth, previousPoint.y * blockHeight,
+                    blockWidth, blockHeight, null);
+    }
+
+    private void drawPlayers(IGameBoard gameBoard, Graphics g) {
+        HashMap<IPlayer, Point> newPlayersPosition = gameBoard.getPlayersPositions();
+        IGameObject[][] newMap = gameBoard.getMap();
+        for (Map.Entry<IPlayer, Point> entry : newPlayersPosition.entrySet()) {
+            Point point = entry.getValue();
+            IPlayer player = entry.getKey();
+            if (playersPositions != null) {
+                Point previousPoint = playersPositions.get(player);
+                IPlayer previousPlayer = playersPositions
+                        .keySet()
+                        .stream()
+                        .filter(p -> p.getName().equals(player.getName()))
+                        .findAny()
+                        .get();
+                if (!previousPoint.equals(point) || player.getDirection() != previousPlayer.getDirection()) {
+                    redrawBackgroundObject(g, newMap, previousPoint);
+                    g.drawImage(rotateImage(images.get(player.getClass()), player.getDirection()),
+                            point.x * blockWidth, point.y * blockHeight,
+                            blockWidth, blockHeight, null);
+                }
+
+            } else
+                g.drawImage(rotateImage(images.get(player.getClass()), player.getDirection()),
+                        point.x * blockWidth, point.y * blockHeight,
+                        blockWidth, blockHeight, null);
+        }
+        playersPositions = newPlayersPosition;
+    }
+
+    private void drawMap(IGameBoard gameBoard, Graphics g) {
+        IGameObject[][] newMap = gameBoard.getMap();
         for (int i = 0; i < width; i++)
             for (int j = 0; j < height; j++) {
                 if (map != null) {
@@ -78,66 +149,6 @@ public class GameForm extends JFrame {
                             blockWidth, blockHeight, null);
             }
         map = newMap;
-        for (Map.Entry<IPlayer, Point> entry : newPlayersPosition.entrySet()) {
-            Point point = entry.getValue();
-            IPlayer player = entry.getKey();
-            if (playersPositions != null) {
-                Point previousPoint = playersPositions.get(player);
-                IPlayer previousPlayer = playersPositions
-                        .keySet()
-                        .stream()
-                        .filter(p -> p.getName().equals(player.getName()))
-                        .findAny()
-                        .get();
-                if (!previousPoint.equals(point) || player.getDirection() != previousPlayer.getDirection()) {
-                    g.clearRect(previousPoint.x * blockWidth, previousPoint.y * blockHeight, blockWidth, blockHeight);
-                    if (newMap[previousPoint.x][previousPoint.y] != null)
-                        g.drawImage(rotateImage(images.get(newMap[previousPoint.x][previousPoint.y].getClass()),
-                                newMap[previousPoint.x][previousPoint.y].getDirection()),
-                                previousPoint.x * blockWidth, previousPoint.y * blockHeight,
-                                blockWidth, blockHeight, null);
-                    g.drawImage(rotateImage(images.get(player.getClass()), player.getDirection()),
-                            point.x * blockWidth, point.y * blockHeight,
-                            blockWidth, blockHeight, null);
-                }
-
-            } else
-                g.drawImage(rotateImage(images.get(player.getClass()), player.getDirection()),
-                        point.x * blockWidth, point.y * blockHeight,
-                        blockWidth, blockHeight, null);
-        }
-        playersPositions = newPlayersPosition;
-
-        for (Map.Entry<IProjectile, Point> entry : newProjectilesPositions.entrySet()) {
-            Point point = entry.getValue();
-            IProjectile projectile = entry.getKey();
-            if (projectilesPositions != null) {
-                Point previousPoint = projectilesPositions.get(projectile);
-                IProjectile previousProjectile = projectilesPositions
-                        .keySet()
-                        .stream()
-                        .filter(p -> p.getOwner().equals(projectile.getOwner()))
-                        .findAny()
-                        .get();
-                if (!previousPoint.equals(point)) {
-                    g.clearRect(previousPoint.x * blockWidth, previousPoint.y * blockHeight, blockWidth, blockHeight);
-                    if (newMap[previousPoint.x][previousPoint.y] != null)
-                        g.drawImage(rotateImage(images.get(newMap[previousPoint.x][previousPoint.y].getClass()),
-                                newMap[previousPoint.x][previousPoint.y].getDirection()),
-                                previousPoint.x * blockWidth, previousPoint.y * blockHeight,
-                                blockWidth, blockHeight, null);
-                    g.drawImage(rotateImage(images.get(projectile.getClass()), projectile.getDirection()),
-                            point.x * blockWidth, point.y * blockHeight,
-                            blockWidth, blockHeight, null);
-                }
-
-            } else
-                g.drawImage(rotateImage(images.get(projectile.getClass()), projectile.getDirection()),
-                        point.x * blockWidth, point.y * blockHeight,
-                        blockWidth, blockHeight, null);
-        }
-        projectilesPositions = newProjectilesPositions;
-        g.dispose();
     }
 
     private static BufferedImage rotateImage(BufferedImage src, Direction direction) {

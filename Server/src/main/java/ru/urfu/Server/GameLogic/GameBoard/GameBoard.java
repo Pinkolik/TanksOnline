@@ -7,6 +7,7 @@ import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.util.HashMap;
+import java.util.Map;
 import java.util.Random;
 
 public class GameBoard implements IGameBoard {
@@ -29,7 +30,7 @@ public class GameBoard implements IGameBoard {
             map[0][j] = new Brick();
             map[width - 1][j] = new Brick();
         }
-        Timer iterateTimer = new Timer(500, new IterateTimerListener());
+        Timer iterateTimer = new Timer(100, new IterateTimerListener());
         iterateTimer.start();
     }
 
@@ -79,41 +80,100 @@ public class GameBoard implements IGameBoard {
     }
 
     private void putProjectileOnBoard(PlayerAction playerAction) {
+        if (projectilesPositions.keySet().stream().anyMatch(p -> p.getOwner().equals(playerAction.getPlayerName())))
+            return;
         IPlayer player = playersPositions
                 .keySet()
                 .stream()
-                .filter(p->p.getName().equals(playerAction.getPlayerName()))
+                .filter(p -> p.getName().equals(playerAction.getPlayerName()))
                 .findAny()
                 .get();
         Point playerPosition = playersPositions.get(player);
         Direction playerDirection = player.getDirection();
-        Point projectilePosition = null;
-        IProjectile projectile = new Projectile(10, playerAction.getPlayerName());
+        Point projectilePosition = new Point(playerPosition.x, playerPosition.y);
+        IProjectile projectile = new Projectile(5, playerAction.getPlayerName());
         switch (playerDirection) {
             case Up:
                 projectile.setDirection(Direction.Up);
-                projectilePosition = new Point(playerPosition.x, playerPosition.y - 1);
                 break;
             case Down:
                 projectile.setDirection(Direction.Down);
-                projectilePosition = new Point(playerPosition.x, playerPosition.y + 1);
                 break;
             case Left:
                 projectile.setDirection(Direction.Left);
-                projectilePosition = new Point(playerPosition.x - 1, playerPosition.y);
                 break;
             case Right:
                 projectile.setDirection(Direction.Right);
-                projectilePosition = new Point(playerPosition.x + 1, playerPosition.y);
                 break;
         }
         projectilesPositions.put(projectile, projectilePosition);
+        updateProjectilesPositions();
+        updateMap();
+    }
+
+    private void updateMap() {
+        for (int i = 0; i < width; i++)
+            for (int j = 0; j < height; j++)
+                if (map[i][j] != null && map[i][j].getHealth() <= 0)
+                    map[i][j] = null;
+
+        for (IPlayer player : playersPositions.keySet()) {
+            if (player.getHealth() <= 0)
+                playersPositions.remove(player);
+        }
+    }
+
+    private void updateProjectilesPositions() {
+        for (Map.Entry<IProjectile, Point> entry : projectilesPositions.entrySet()) {
+            IProjectile projectile = entry.getKey();
+            Direction projectileDirection = projectile.getDirection();
+            Point projectilePosition = entry.getValue();
+            Point newProjectilePosition = null;
+            switch (projectileDirection) {
+                case Up:
+                    newProjectilePosition = new Point(projectilePosition.x, projectilePosition.y - 1);
+                    break;
+                case Down:
+                    newProjectilePosition = new Point(projectilePosition.x, projectilePosition.y + 1);
+                    break;
+                case Left:
+                    newProjectilePosition = new Point(projectilePosition.x - 1, projectilePosition.y);
+                    break;
+                case Right:
+                    newProjectilePosition = new Point(projectilePosition.x + 1, projectilePosition.y);
+                    break;
+            }
+            if (isOutOfBounds(newProjectilePosition)) {
+                projectilesPositions.remove(projectile);
+                continue;
+            }
+            for (Map.Entry<IPlayer, Point> playerPointEntry : playersPositions.entrySet()) {
+                if (playerPointEntry.getValue() == newProjectilePosition) {
+                    playerPointEntry.getKey().hit(projectile.getDamage());
+                    projectilesPositions.remove(projectile);
+                    continue;
+                }
+            }
+
+            IGameObject gameObject = map[newProjectilePosition.x][newProjectilePosition.y];
+            if (gameObject == null || gameObject.canProjectilePass())
+                projectilesPositions.replace(projectile, newProjectilePosition);
+            else if (gameObject.isDestructible()) {
+                gameObject.hit(projectile.getDamage());
+                projectilesPositions.remove(projectile);
+            } else
+                projectilesPositions.remove(projectile);
+        }
     }
 
     private void removePlayer(PlayerAction playerAction) {
         playersPositions.entrySet().removeIf(e -> e.getKey().getName().equals(playerAction.getPlayerName()));
         if (playersPositions.size() == 0)
             gameState = GameState.WaitingForPlayers;
+    }
+
+    private boolean isOutOfBounds(Point point) {
+        return point.x < 0 || point.x >= width || point.y < 0 || point.y >= height;
     }
 
     private void putPlayerOnBoard(PlayerAction playerAction) {
@@ -156,6 +216,8 @@ public class GameBoard implements IGameBoard {
                 player.setDirection(Direction.Right);
                 break;
         }
+        if (isOutOfBounds(newPos))
+            return;
         if (map[newPos.x][newPos.y] == null || map[newPos.x][newPos.y].canPlayerPass())
             playersPositions.replace(player, newPos);
 
@@ -165,7 +227,8 @@ public class GameBoard implements IGameBoard {
 
         @Override
         public void actionPerformed(ActionEvent e) {
-
+            updateProjectilesPositions();
+            updateMap();
         }
     }
 }
