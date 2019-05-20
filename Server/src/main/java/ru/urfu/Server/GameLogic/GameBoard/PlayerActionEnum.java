@@ -7,6 +7,5 @@ public enum PlayerActionEnum {
     MoveRight,
     MoveUp,
     MoveDown,
-    Shoot,
-    Update
+    Shoot
 }

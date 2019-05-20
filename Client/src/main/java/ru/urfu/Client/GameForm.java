@@ -10,9 +10,11 @@ import ru.urfu.Server.GameLogic.GameObjects.*;
 import javax.imageio.ImageIO;
 import javax.swing.*;
 import java.awt.*;
-import java.awt.event.*;
+import java.awt.event.KeyEvent;
+import java.awt.event.KeyListener;
+import java.awt.event.WindowEvent;
+import java.awt.event.WindowListener;
 import java.awt.image.BufferedImage;
-import java.nio.Buffer;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Random;
@@ -20,16 +22,14 @@ import java.util.Random;
 public class GameForm extends JFrame {
     private HashMap<Class, BufferedImage> images = new HashMap<>();
     private StompClient stompClient;
-    private String playerName = "Pinkolik";
+    private String playerName;
     private String actionUrl = "/app/action";
-    private IGameObject[][] map;
-    private HashMap<IPlayer, Point> playersPositions;
-    private HashMap<IProjectile, Point> projectilesPositions;
+    private IGameBoard gameBoard;
+    private JPanel jPanel;
     private int width;
     private int height;
     private int blockWidth;
     private int blockHeight;
-    private Timer updateTimer;
 
     private void initializeResources() throws Exception {
         Resource resource = new ClassPathResource("brick.png");
@@ -46,143 +46,71 @@ public class GameForm extends JFrame {
         images.put(Water.class, ImageIO.read(resource.getInputStream()));
     }
 
-    public GameForm() throws Exception {
+    GameForm() throws Exception {
         playerName = Integer.toString(new Random().nextInt(1000));
         initializeResources();
+        jPanel = new JPanel() {
+            @Override
+            protected void paintComponent(Graphics g) {
+                super.paintComponent(g);
+                if (gameBoard == null)
+                    return;
+                drawHashMap(g, gameBoard.getPlayersPositions());
+                drawMap(g);
+                drawHashMap(g, gameBoard.getProjectilesPositions());
+            }
+
+        };
+        getContentPane().add(jPanel);
         setSize(500, 500);
         setVisible(true);
         setDefaultCloseOperation(EXIT_ON_CLOSE);
         stompClient = new StompClient(this);
         addKeyListener(new MyKeyListener());
         addWindowListener(new MyWindowListener());
-        updateTimer = new Timer(50, new TimerListener());
     }
 
-    public void startTimer() {
-        updateTimer.start();
-    }
-
-    public String getPlayerName() {
+    String getPlayerName() {
         return playerName;
     }
 
-    public void drawGameBoard(IGameBoard gameBoard) {
+    void updateGameBoard(IGameBoard gameBoard) {
+        this.gameBoard = gameBoard;
         updateDrawingSizes(gameBoard);
-        Graphics g = this.getGraphics();
-        drawMap(gameBoard, g);
-        drawPlayers(gameBoard, g);
-        drawProjectiles(gameBoard, g);
-
-        g.dispose();
+        jPanel.repaint();
     }
 
     private void updateDrawingSizes(IGameBoard gameBoard) {
         IGameObject[][] newMap = gameBoard.getMap();
         width = newMap.length;
         height = newMap[0].length;
-        blockWidth = getWidth() / width;
-        blockHeight = getHeight() / height;
+        blockWidth = jPanel.getWidth() / width;
+        blockHeight = jPanel.getHeight() / height;
     }
 
-    private void drawProjectiles(IGameBoard gameBoard, Graphics g) {
-        IGameObject[][] newMap = gameBoard.getMap();
-        HashMap<IProjectile, Point> newProjectilesPositions = gameBoard.getProjectilesPositions();
-        if (projectilesPositions != null)
-            for (Map.Entry<IProjectile, Point> entry : projectilesPositions.entrySet()) {
-                Point point = entry.getValue();
-                redrawBackgroundObject(g, newMap, point);
-            }
-        for (Map.Entry<IProjectile, Point> entry : newProjectilesPositions.entrySet()) {
+
+    private void drawHashMap(Graphics g, HashMap<? extends IGameObject, Point> hashMap) {
+        if (hashMap == null)
+            return;
+        for (Map.Entry<? extends IGameObject, Point> entry : hashMap.entrySet()) {
             Point point = entry.getValue();
-            IProjectile projectile = entry.getKey();
-            g.drawImage(rotateImage(images.get(projectile.getClass()), projectile.getDirection()),
-                    point.x * blockWidth, point.y * blockHeight,
-                    blockWidth, blockHeight, null);
-        }
-        projectilesPositions = newProjectilesPositions;
-    }
-
-    private void redrawBackgroundObject(Graphics g, IGameObject[][] newMap, Point previousPoint) {
-        g.clearRect(previousPoint.x * blockWidth, previousPoint.y * blockHeight, blockWidth, blockHeight);
-        if (newMap[previousPoint.x][previousPoint.y] != null)
-            g.drawImage(rotateImage(images.get(newMap[previousPoint.x][previousPoint.y].getClass()),
-                    newMap[previousPoint.x][previousPoint.y].getDirection()),
-                    previousPoint.x * blockWidth, previousPoint.y * blockHeight,
-                    blockWidth, blockHeight, null);
-    }
-
-    private void drawObjectOnTop(Graphics g, IGameObject[][] newMap, Point point) {
-        IGameObject iGameObject = newMap[point.x][point.y];
-        if (iGameObject != null && iGameObject.canPlayerPass())
+            IGameObject iGameObject = entry.getKey();
             g.drawImage(rotateImage(images.get(iGameObject.getClass()), iGameObject.getDirection()),
                     point.x * blockWidth, point.y * blockHeight,
                     blockWidth, blockHeight, null);
-
-    }
-
-    private void drawPlayers(IGameBoard gameBoard, Graphics g) {
-        HashMap<IPlayer, Point> newPlayersPosition = gameBoard.getPlayersPositions();
-        IGameObject[][] newMap = gameBoard.getMap();
-        if (playersPositions!= null)
-            for (Map.Entry<IPlayer, Point> entry : playersPositions.entrySet())
-            {
-                Point point = entry.getValue();
-                IPlayer player = entry.getKey();
-                if (!newPlayersPosition.containsKey(player))
-                    redrawBackgroundObject(g, newMap, point);
-            }
-        for (Map.Entry<IPlayer, Point> entry : newPlayersPosition.entrySet()) {
-            Point point = entry.getValue();
-            IPlayer player = entry.getKey();
-            if (playersPositions != null && playersPositions.containsKey(player)) {
-                Point previousPoint = playersPositions.get(player);
-                IPlayer previousPlayer = playersPositions
-                        .keySet()
-                        .stream()
-                        .filter(p -> p.getName().equals(player.getName()))
-                        .findAny()
-                        .get();
-                if (!previousPoint.equals(point) || player.getDirection() != previousPlayer.getDirection()) {
-                    redrawBackgroundObject(g, newMap, previousPoint);
-                    g.drawImage(rotateImage(images.get(player.getClass()), player.getDirection()),
-                            point.x * blockWidth, point.y * blockHeight,
-                            blockWidth, blockHeight, null);
-                    drawObjectOnTop(g, newMap, point);
-                }
-
-            } else
-                g.drawImage(rotateImage(images.get(player.getClass()), player.getDirection()),
-                        point.x * blockWidth, point.y * blockHeight,
-                        blockWidth, blockHeight, null);
         }
-        playersPositions = newPlayersPosition;
     }
 
-    private void drawMap(IGameBoard gameBoard, Graphics g) {
-        IGameObject[][] newMap = gameBoard.getMap();
+    private void drawMap(Graphics g) {
+        IGameObject[][] map = gameBoard.getMap();
+        if (map == null)
+            return;
         for (int i = 0; i < width; i++)
-            for (int j = 0; j < height; j++) {
-                if (map != null) {
-                    if (map[i][j] != null && newMap[i][j] == null)
-                        g.clearRect(i * blockWidth, j * blockHeight, blockWidth, blockHeight);
-                    if (map[i][j] == null && newMap[i][j] != null)
-                        g.drawImage(rotateImage(images.get(newMap[i][j].getClass()), newMap[i][j].getDirection()),
-                                i * blockWidth, j * blockHeight,
-                                blockWidth, blockHeight, null);
-                    if (map[i][j] != null && newMap[i][j] != null
-                            && (map[i][j].getClass() != newMap[i][j].getClass()
-                            || map[i][j].getDirection() != newMap[i][j].getDirection())) {
-                        g.clearRect(i * blockWidth, j * blockHeight, blockWidth, blockHeight);
-                        g.drawImage(rotateImage(images.get(newMap[i][j].getClass()), newMap[i][j].getDirection()),
-                                i * blockWidth, j * blockHeight,
-                                blockWidth, blockHeight, null);
-                    }
-                } else if (newMap[i][j] != null)
-                    g.drawImage(rotateImage(images.get(newMap[i][j].getClass()), newMap[i][j].getDirection()),
+            for (int j = 0; j < height; j++)
+                if (map[i][j] != null)
+                    g.drawImage(images.get(map[i][j].getClass()),
                             i * blockWidth, j * blockHeight,
                             blockWidth, blockHeight, null);
-            }
-        map = newMap;
     }
 
     private static BufferedImage rotateImage(BufferedImage src, Direction direction) {
@@ -203,7 +131,7 @@ public class GameForm extends JFrame {
                 break;
         }
 
-        BufferedImage dest = new BufferedImage(height, width, src.getType());
+        BufferedImage dest = new BufferedImage(width, height, src.getType());
 
         Graphics2D graphics2D = dest.createGraphics();
         graphics2D.translate((height - width) / 2, (height - width) / 2);
@@ -245,16 +173,6 @@ public class GameForm extends JFrame {
         @Override
         public void keyReleased(KeyEvent e) {
 
-        }
-    }
-
-    private class TimerListener implements ActionListener {
-
-        @Override
-        public void actionPerformed(ActionEvent e) {
-            stompClient
-                    .getStompSession()
-                    .send(actionUrl, new PlayerAction(playerName, PlayerActionEnum.Update));
         }
     }
 

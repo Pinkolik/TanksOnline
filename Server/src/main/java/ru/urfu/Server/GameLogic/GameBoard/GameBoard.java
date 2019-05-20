@@ -22,17 +22,43 @@ public class GameBoard implements IGameBoard {
 
     public GameBoard() {
         map = new IGameObject[width][height];
-        for (int i = 0; i < width; i++) {
-            map[i][0] = new Brick();
-            map[i][height - 1] = new Brick();
-        }
-        for (int j = 1; j < height - 1; j++) {
-            map[0][j] = new Brick();
-            map[width - 1][j] = new Brick();
-        }
-        map[1][1] = new Water();
-        map[2][2] = new Rock();
-        map[3][3] = new Bush();
+//        for (int i = 0; i < width; i++) {
+//            map[i][0] = new Brick();
+//            map[i][height - 1] = new Brick();
+//        }
+//        for (int j = 1; j < height - 1; j++) {
+//            map[0][j] = new Brick();
+//            map[width - 1][j] = new Brick();
+//        }
+//        map[1][1] = new Water();
+//        map[2][2] = new Rock();
+//        map[3][3] = new Bush();
+        Random random = new Random();
+        for (int i = 0; i< width; i++)
+            for (int j = 0; j< height; j++)
+            {
+                switch (random.nextInt(6))
+                {
+                    case 0:
+                        map[i][j] = new Bush();
+                        break;
+                    case 1:
+                        map[i][j] = new Water();
+                        break;
+                    case 2:
+                        map[i][j] = new Rock();
+                        break;
+                    case 3:
+                        map[i][j] = new Brick();
+                        break;
+                    case 4:
+                        map[i][j] = null;
+                        break;
+                    case 5:
+                        map[i][j] = null;
+                        break;
+                }
+            }
         Timer iterateTimer = new Timer(100, new IterateTimerListener());
         iterateTimer.start();
     }
@@ -76,8 +102,6 @@ public class GameBoard implements IGameBoard {
                 break;
             case Shoot:
                 putProjectileOnBoard(playerAction);
-                break;
-            case Update:
                 break;
         }
     }

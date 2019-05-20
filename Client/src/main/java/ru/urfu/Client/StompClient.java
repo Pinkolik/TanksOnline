@@ -17,18 +17,16 @@ import org.springframework.web.socket.messaging.WebSocketStompClient;
 public class StompClient {
 
     private Logger logger = LogManager.getLogger(StompClient.class);
-    private static String URL = "ws://localhost:8080/game";
     private StompSession stompSession;
-    private GameForm gameForm;
 
     public StompClient(GameForm gameForm) throws Exception {
-        this.gameForm = gameForm;
         WebSocketClient client = new StandardWebSocketClient();
         WebSocketStompClient stompClient = new WebSocketStompClient(client);
 
         stompClient.setMessageConverter(new MappingJackson2MessageConverter());
 
         StompSessionHandler sessionHandler = new MyStompSessionHandler(gameForm);
+        String URL = "ws://localhost:8080/game";
         stompSession = stompClient.connect(URL, sessionHandler).get();
     }
 

@@ -6,7 +6,6 @@ import org.springframework.messaging.simp.stomp.StompCommand;
 import org.springframework.messaging.simp.stomp.StompHeaders;
 import org.springframework.messaging.simp.stomp.StompSession;
 import org.springframework.messaging.simp.stomp.StompSessionHandlerAdapter;
-import ru.urfu.Server.GameLogic.GameBoard.GameBoard;
 import ru.urfu.Server.GameLogic.GameBoard.IGameBoard;
 import ru.urfu.Server.GameLogic.GameBoard.PlayerAction;
 import ru.urfu.Server.GameLogic.GameBoard.PlayerActionEnum;
@@ -30,7 +29,6 @@ public class MyStompSessionHandler extends StompSessionHandlerAdapter {
         logger.info("Subscribed to /topic/gameboard");
         session.send("/app/action", new PlayerAction(gameForm.getPlayerName(), PlayerActionEnum.Connected));
         logger.info("Sent action to /app/action");
-        gameForm.startTimer();
     }
 
     @Override
@@ -47,7 +45,7 @@ public class MyStompSessionHandler extends StompSessionHandlerAdapter {
     @Override
     public void handleFrame(StompHeaders headers, Object payload) {
         IGameBoard gameBoard = (IGameBoard) payload;
-        gameForm.drawGameBoard(gameBoard);
+        gameForm.updateGameBoard(gameBoard);
         logger.info("Received from server))))");
         logger.info(((IGameBoard) payload).getGameState());
     }
