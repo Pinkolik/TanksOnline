@@ -11,6 +11,7 @@ import ru.urfu.Server.GameLogic.GameBoard.GameBoard;
 import ru.urfu.Server.GameLogic.GameBoard.IGameBoard;
 import ru.urfu.Server.GameLogic.GameBoard.PlayerAction;
 import ru.urfu.Server.Models.User;
+import ru.urfu.Server.Models.UserStatistics;
 import ru.urfu.Server.Repositories.UsersRepository;
 
 @EnableScheduling

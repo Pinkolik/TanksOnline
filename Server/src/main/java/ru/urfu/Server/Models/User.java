@@ -21,7 +21,7 @@ public class User {
     }
 
     @OneToOne(mappedBy = "user")
-    private UserStatistics userStatistics;
+    private UserStatistics userStatistics = new UserStatistics();
 
     public UserStatistics getUserStatistics() {
         return userStatistics;
