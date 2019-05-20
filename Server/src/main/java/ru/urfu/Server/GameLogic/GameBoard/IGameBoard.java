@@ -10,6 +10,7 @@ import ru.urfu.Server.GameLogic.GameObjects.IProjectile;
 
 import java.awt.*;
 import java.util.HashMap;
+import java.util.UUID;
 
 @JsonTypeInfo(
         use = JsonTypeInfo.Id.NAME,
@@ -20,6 +21,7 @@ import java.util.HashMap;
 public interface IGameBoard {
     GameState getGameState();
     IGameObject[][] getMap();
+    UUID getGameToken();
     @JsonDeserialize(keyUsing = PlayerMapKeyDeserializer.class)
     HashMap<IPlayer, Point> getPlayersPositions();
     @JsonDeserialize(keyUsing = ProjectileMapKeyDeserializer.class)

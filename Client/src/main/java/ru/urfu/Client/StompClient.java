@@ -8,6 +8,7 @@ import org.springframework.messaging.converter.MappingJackson2MessageConverter;
 import org.springframework.messaging.converter.SimpleMessageConverter;
 import org.springframework.messaging.simp.stomp.StompSession;
 import org.springframework.messaging.simp.stomp.StompSessionHandler;
+import org.springframework.messaging.simp.stomp.StompSessionHandlerAdapter;
 import org.springframework.scheduling.concurrent.ConcurrentTaskScheduler;
 import org.springframework.stereotype.Component;
 import org.springframework.web.socket.client.WebSocketClient;
@@ -17,16 +18,21 @@ import org.springframework.web.socket.messaging.WebSocketStompClient;
 public class StompClient {
 
     private Logger logger = LogManager.getLogger(StompClient.class);
+    private StompSessionHandlerAdapter sessionHandler;
+    private WebSocketStompClient stompClient;
     private StompSession stompSession;
 
-    public StompClient(GameForm gameForm) throws Exception {
+    public StompClient(StompSessionHandlerAdapter sessionHandler) throws Exception {
         WebSocketClient client = new StandardWebSocketClient();
-        WebSocketStompClient stompClient = new WebSocketStompClient(client);
+        stompClient = new WebSocketStompClient(client);
 
         stompClient.setMessageConverter(new MappingJackson2MessageConverter());
 
-        StompSessionHandler sessionHandler = new MyStompSessionHandler(gameForm);
-        String URL = "ws://localhost:8080/game";
+        this.sessionHandler = sessionHandler;
+    }
+
+    public void connect(String ip) throws Exception {
+        String URL = "ws://" + ip + ":8080/game";
         stompSession = stompClient.connect(URL, sessionHandler).get();
     }
 

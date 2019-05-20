@@ -9,6 +9,7 @@ import java.awt.event.ActionListener;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Random;
+import java.util.UUID;
 
 public class GameBoard implements IGameBoard {
     private GameState gameState = GameState.WaitingForPlayers;
@@ -17,22 +18,12 @@ public class GameBoard implements IGameBoard {
     private HashMap<IProjectile, Point> projectilesPositions = new HashMap<>();
     private int width = 10;
     private int height = 10;
-    private int playersCount = 0;
     private String type = "gameBoard";
+    private UUID gameToken;
 
     public GameBoard() {
         map = new IGameObject[width][height];
-//        for (int i = 0; i < width; i++) {
-//            map[i][0] = new Brick();
-//            map[i][height - 1] = new Brick();
-//        }
-//        for (int j = 1; j < height - 1; j++) {
-//            map[0][j] = new Brick();
-//            map[width - 1][j] = new Brick();
-//        }
-//        map[1][1] = new Water();
-//        map[2][2] = new Rock();
-//        map[3][3] = new Bush();
+        gameToken = UUID.randomUUID();
         Random random = new Random();
         for (int i = 0; i< width; i++)
             for (int j = 0; j< height; j++)
@@ -74,6 +65,11 @@ public class GameBoard implements IGameBoard {
     }
 
     @Override
+    public UUID getGameToken() {
+        return gameToken;
+    }
+
+    @Override
     public HashMap<IPlayer, Point> getPlayersPositions() {
         return playersPositions;
     }
@@ -83,7 +79,6 @@ public class GameBoard implements IGameBoard {
         return projectilesPositions;
     }
 
-    @Override
     public void processPlayerAction(PlayerAction playerAction) {
         PlayerActionEnum action = playerAction.getPlayerActionEnum();
         switch (action) {

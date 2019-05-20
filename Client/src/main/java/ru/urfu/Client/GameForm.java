@@ -18,8 +18,11 @@ import java.awt.image.BufferedImage;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Random;
+import java.util.UUID;
 
 public class GameForm extends JFrame {
+    private String ip;
+    private UUID gameToken;
     private HashMap<Class, BufferedImage> images = new HashMap<>();
     private StompClient stompClient;
     private String playerName;
@@ -46,8 +49,10 @@ public class GameForm extends JFrame {
         images.put(Water.class, ImageIO.read(resource.getInputStream()));
     }
 
-    GameForm() throws Exception {
-        playerName = Integer.toString(new Random().nextInt(1000));
+    GameForm(String playerName, UUID gameToken, String ip) throws Exception {
+        this.playerName = playerName;
+        this.gameToken = gameToken;
+        this.ip = ip;
         initializeResources();
         jPanel = new JPanel() {
             @Override
@@ -65,9 +70,10 @@ public class GameForm extends JFrame {
         setSize(500, 500);
         setVisible(true);
         setDefaultCloseOperation(EXIT_ON_CLOSE);
-        stompClient = new StompClient(this);
+        stompClient = new StompClient(new GameSessionHandler(this, gameToken));
         addKeyListener(new MyKeyListener());
         addWindowListener(new MyWindowListener());
+        stompClient.connect(ip);
     }
 
     String getPlayerName() {
@@ -152,19 +158,19 @@ public class GameForm extends JFrame {
         public void keyPressed(KeyEvent e) {
             switch (Character.toLowerCase(e.getKeyChar())) {
                 case 'w':
-                    stompClient.getStompSession().send(actionUrl, new PlayerAction(playerName, PlayerActionEnum.MoveUp));
+                    stompClient.getStompSession().send(actionUrl, new PlayerAction(playerName, PlayerActionEnum.MoveUp, gameToken));
                     break;
                 case 's':
-                    stompClient.getStompSession().send(actionUrl, new PlayerAction(playerName, PlayerActionEnum.MoveDown));
+                    stompClient.getStompSession().send(actionUrl, new PlayerAction(playerName, PlayerActionEnum.MoveDown, gameToken));
                     break;
                 case 'a':
-                    stompClient.getStompSession().send(actionUrl, new PlayerAction(playerName, PlayerActionEnum.MoveLeft));
+                    stompClient.getStompSession().send(actionUrl, new PlayerAction(playerName, PlayerActionEnum.MoveLeft, gameToken));
                     break;
                 case 'd':
-                    stompClient.getStompSession().send(actionUrl, new PlayerAction(playerName, PlayerActionEnum.MoveRight));
+                    stompClient.getStompSession().send(actionUrl, new PlayerAction(playerName, PlayerActionEnum.MoveRight, gameToken));
                     break;
                 case ' ':
-                    stompClient.getStompSession().send(actionUrl, new PlayerAction(playerName, PlayerActionEnum.Shoot));
+                    stompClient.getStompSession().send(actionUrl, new PlayerAction(playerName, PlayerActionEnum.Shoot, gameToken));
                     break;
             }
 
@@ -185,7 +191,7 @@ public class GameForm extends JFrame {
 
         @Override
         public void windowClosing(WindowEvent e) {
-            stompClient.getStompSession().send(actionUrl, new PlayerAction(playerName, PlayerActionEnum.Disconnected));
+            stompClient.getStompSession().send(actionUrl, new PlayerAction(playerName, PlayerActionEnum.Disconnected, gameToken));
         }
 
         @Override
