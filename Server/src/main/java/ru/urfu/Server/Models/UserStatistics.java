@@ -12,9 +12,6 @@ public class UserStatistics {
     private Integer id;
     private Integer killsCount = 0;
     private Integer deathsCount = 0;
-    private Integer wonRoundsCount = 0;
-    private Integer lostRoundsCount = 0;
-    private Integer playedRoundsCount = 0;
     private Integer firedShotsCount = 0;
     private Integer madeMovesCount = 0;
     @OneToOne(cascade = CascadeType.ALL)
@@ -71,30 +68,6 @@ public class UserStatistics {
 
     public void setDeathsCount(Integer deathsCount) {
         this.deathsCount = deathsCount;
-    }
-
-    public Integer getWonRoundsCount() {
-        return wonRoundsCount;
-    }
-
-    public void setWonRoundsCount(Integer wonRoundsCount) {
-        this.wonRoundsCount = wonRoundsCount;
-    }
-
-    public Integer getLostRoundsCount() {
-        return lostRoundsCount;
-    }
-
-    public void setLostRoundsCount(Integer lostRoundsCount) {
-        this.lostRoundsCount = lostRoundsCount;
-    }
-
-    public Integer getPlayedRoundsCount() {
-        return playedRoundsCount;
-    }
-
-    public void setPlayedRoundsCount(Integer playedRoundsCount) {
-        this.playedRoundsCount = playedRoundsCount;
     }
 
     public Integer getFiredShotsCount() {

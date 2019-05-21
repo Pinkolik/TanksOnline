@@ -123,12 +123,16 @@ public class GameBoard implements IGameBoard {
     private void putProjectileOnBoard(PlayerAction playerAction) {
         if (projectilesPositions.keySet().stream().anyMatch(p -> p.getOwner().equals(playerAction.getPlayerName())))
             return;
-        IPlayer player = playersPositions
+        Optional<IPlayer> optionalIPlayer = playersPositions
                 .keySet()
                 .stream()
                 .filter(p -> p.getName().equals(playerAction.getPlayerName()))
-                .findAny()
-                .get();
+                .findAny();
+
+        if (!optionalIPlayer.isPresent())
+            return;
+        IPlayer player = optionalIPlayer.get();
+        player.increaseFiredShotsCount();
         Point playerPosition = playersPositions.get(player);
         Direction playerDirection = player.getDirection();
         Point projectilePosition = new Point(playerPosition.x, playerPosition.y);
@@ -162,24 +166,37 @@ public class GameBoard implements IGameBoard {
             if (entry.getKey().getHealth() > 0)
                 newPlayersPositions.put(entry.getKey(), entry.getValue());
             else {
-                UserStatistics userStatistics = usersRepository.findByUserName(entry.getKey().getName()).getUserStatistics();
-                userStatistics.setDeathsCount(userStatistics.getDeathsCount() + 1);
-                usersStatisticsRepository.save(userStatistics);
+                IPlayer player = entry.getKey();
+                updateUserStatistics(player.getName(), 1, player.getFiredShotsCount(), player.getMovesCount(), player.getKillsCount());
             }
         }
         playersPositions = newPlayersPositions;
         if (playersPositions.size() < 2 && gameState == GameState.InProgress) {
+            IPlayer winner = playersPositions
+                    .keySet()
+                    .stream()
+                    .findAny()
+                    .get();
             currentRound.setWinner(
                     usersRepository
-                            .findByUserName(playersPositions
-                                    .keySet()
-                                    .stream()
-                                    .findAny()
-                                    .get()
-                                    .getName())
+                            .findByUserName(winner.getName())
                             .getUserStatistics());
+            updateUserStatistics(winner.getName(), 0, winner.getFiredShotsCount(), winner.getMovesCount(), winner.getKillsCount());
             endRound();
         }
+    }
+
+    private void updateUserStatistics(String userName,
+                                      int increasedDeaths,
+                                      int increaseShots,
+                                      int increaseMoves,
+                                      int increaseKills) {
+        UserStatistics userStatistics = usersRepository.findByUserName(userName).getUserStatistics();
+        userStatistics.setDeathsCount(userStatistics.getDeathsCount() + increasedDeaths);
+        userStatistics.setFiredShotsCount(userStatistics.getFiredShotsCount() + increaseShots);
+        userStatistics.setKillsCount(userStatistics.getKillsCount() + increaseKills);
+        userStatistics.setMadeMovesCount(userStatistics.getMadeMovesCount() + increaseMoves);
+        usersStatisticsRepository.save(userStatistics);
     }
 
     private void updateProjectilesPositions() {
@@ -296,12 +313,15 @@ public class GameBoard implements IGameBoard {
     }
 
     private void movePlayer(PlayerAction playerAction) {
-        IPlayer player = playersPositions
+        Optional<IPlayer> optionalIPlayer = playersPositions
                 .keySet()
                 .stream()
                 .filter(p -> p.getName().equals(playerAction.getPlayerName()))
-                .findAny()
-                .get();
+                .findAny();
+        IPlayer player = null;
+        if (!optionalIPlayer.isPresent())
+            return;
+        player = optionalIPlayer.get();
         Point playerPosition = playersPositions.get(player);
         Point newPos = null;
         switch (playerAction.getPlayerActionEnum()) {
@@ -326,8 +346,10 @@ public class GameBoard implements IGameBoard {
             return;
         if (playersPositions.containsValue(newPos))
             return;
-        if (map[newPos.x][newPos.y] == null || map[newPos.x][newPos.y].canPlayerPass())
+        if (map[newPos.x][newPos.y] == null || map[newPos.x][newPos.y].canPlayerPass()) {
             playersPositions.replace(player, newPos);
+            player.increaseMovesCount();
+        }
 
     }
 
