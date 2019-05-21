@@ -1,6 +1,7 @@
 package ru.urfu.Server.Models;
 
 import javax.persistence.*;
+import java.util.HashSet;
 import java.util.Set;
 
 @Entity
@@ -9,25 +10,20 @@ public class UserStatistics {
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
     private Integer id;
-    private Integer killsCount;
-    private Integer deathsCount;
-    private Integer wonRoundsCount;
-    private Integer lostRoundsCount;
-    private Integer playedRoundsCount;
-    private Integer firedShotsCount;
-    private Integer madeMovesCount;
+    private Integer killsCount = 0;
+    private Integer deathsCount = 0;
+    private Integer wonRoundsCount = 0;
+    private Integer lostRoundsCount = 0;
+    private Integer playedRoundsCount = 0;
+    private Integer firedShotsCount = 0;
+    private Integer madeMovesCount = 0;
     @OneToOne(cascade = CascadeType.ALL)
     @JoinColumn(name = "user_id")
     private User user;
-    @ManyToMany
-    @JoinTable(
-            name ="players_rounds",
-            joinColumns = @JoinColumn(name = "player_id"),
-            inverseJoinColumns = @JoinColumn(name = "round_id")
-    )
-    private Set<Round> playedRounds;
+    @ManyToMany(mappedBy = "allPlayers")
+    private Set<Round> playedRounds = new HashSet<>();
     @OneToMany(mappedBy = "winner")
-    private Set<Round> wonRounds;
+    private Set<Round> wonRounds = new HashSet<>();
 
     public User getUser() {
         return user;

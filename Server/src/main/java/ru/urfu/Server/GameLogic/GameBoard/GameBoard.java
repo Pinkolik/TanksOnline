@@ -1,18 +1,28 @@
 package ru.urfu.Server.GameLogic.GameBoard;
 
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
 import ru.urfu.Server.GameLogic.GameObjects.*;
+import ru.urfu.Server.Models.Round;
+import ru.urfu.Server.Models.User;
+import ru.urfu.Server.Models.UserStatistics;
+import ru.urfu.Server.Repositories.RoundsRepository;
+import ru.urfu.Server.Repositories.UsersRepository;
+import ru.urfu.Server.Repositories.UsersStatisticsRepository;
 
-import javax.swing.*;
+import javax.swing.Timer;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Random;
-import java.util.UUID;
+import java.time.LocalDateTime;
+import java.util.*;
+import java.util.stream.Collectors;
 
+@Component
 public class GameBoard implements IGameBoard {
     private GameState gameState = GameState.WaitingForPlayers;
+    private HashSet<String> playersOnServer = new HashSet<>();
+    private Round currentRound;
     private IGameObject[][] map;
     private HashMap<IPlayer, Point> playersPositions = new HashMap<>();
     private HashMap<IProjectile, Point> projectilesPositions = new HashMap<>();
@@ -20,16 +30,27 @@ public class GameBoard implements IGameBoard {
     private int height = 10;
     private String type = "gameBoard";
     private UUID gameToken;
+    @Autowired
+    private UsersRepository usersRepository;
+    @Autowired
+    private RoundsRepository roundsRepository;
+    @Autowired
+    private UsersStatisticsRepository usersStatisticsRepository;
 
     public GameBoard() {
         map = new IGameObject[width][height];
         gameToken = UUID.randomUUID();
+        generateMap();
+        Timer iterateTimer = new Timer(100, new IterateTimerListener());
+        iterateTimer.start();
+    }
+
+    private void generateMap() {
+        map = new IGameObject[width][height];
         Random random = new Random();
-        for (int i = 0; i< width; i++)
-            for (int j = 0; j< height; j++)
-            {
-                switch (random.nextInt(6))
-                {
+        for (int i = 0; i < width; i++)
+            for (int j = 0; j < height; j++) {
+                switch (random.nextInt(6)) {
                     case 0:
                         map[i][j] = new Bush();
                         break;
@@ -50,8 +71,6 @@ public class GameBoard implements IGameBoard {
                         break;
                 }
             }
-        Timer iterateTimer = new Timer(100, new IterateTimerListener());
-        iterateTimer.start();
     }
 
     @Override
@@ -84,10 +103,10 @@ public class GameBoard implements IGameBoard {
         switch (action) {
 
             case Connected:
-                putPlayerOnBoard(playerAction);
+                playerConnect(playerAction);
                 break;
             case Disconnected:
-                removePlayer(playerAction);
+                playerDisconnect(playerAction);
                 break;
             case MoveLeft:
             case MoveRight:
@@ -142,11 +161,29 @@ public class GameBoard implements IGameBoard {
         for (Map.Entry<IPlayer, Point> entry : playersPositions.entrySet()) {
             if (entry.getKey().getHealth() > 0)
                 newPlayersPositions.put(entry.getKey(), entry.getValue());
+            else {
+                UserStatistics userStatistics = usersRepository.findByUserName(entry.getKey().getName()).getUserStatistics();
+                userStatistics.setDeathsCount(userStatistics.getDeathsCount() + 1);
+                usersStatisticsRepository.save(userStatistics);
+            }
         }
         playersPositions = newPlayersPositions;
+        if (playersPositions.size() < 2 && gameState == GameState.InProgress) {
+            currentRound.setWinner(
+                    usersRepository
+                            .findByUserName(playersPositions
+                                    .keySet()
+                                    .stream()
+                                    .findAny()
+                                    .get()
+                                    .getName())
+                            .getUserStatistics());
+            endRound();
+        }
     }
 
     private void updateProjectilesPositions() {
+        Set<String> playersToIncreaseKillsCount = new HashSet<>();
         for (Map.Entry<IProjectile, Point> entry : projectilesPositions.entrySet()) {
             IProjectile projectile = entry.getKey();
             Direction projectileDirection = projectile.getDirection();
@@ -173,6 +210,8 @@ public class GameBoard implements IGameBoard {
             for (Map.Entry<IPlayer, Point> playerPointEntry : playersPositions.entrySet()) {
                 if (playerPointEntry.getValue().equals(newProjectilePosition)) {
                     playerPointEntry.getKey().hit(projectile.getDamage());
+                    if (playerPointEntry.getKey().getHealth() <= 0)
+                        playersToIncreaseKillsCount.add(projectile.getOwner());
                     projectilesPositions.remove(projectile);
                 }
             }
@@ -186,20 +225,65 @@ public class GameBoard implements IGameBoard {
             } else
                 projectilesPositions.remove(projectile);
         }
+        for (IPlayer player : playersPositions.keySet())
+            for (String playerNameToIncreaseKills : playersToIncreaseKillsCount)
+                if (player.getName().equals(playerNameToIncreaseKills))
+                    player.increaseKillsCount();
     }
 
-    private void removePlayer(PlayerAction playerAction) {
-        playersPositions.entrySet().removeIf(e -> e.getKey().getName().equals(playerAction.getPlayerName()));
-        if (playersPositions.size() == 0)
-            gameState = GameState.WaitingForPlayers;
+    private void removePlayerFromBoard(String playerName) {
+        playersPositions.entrySet().removeIf(e -> e.getKey().getName().equals(playerName));
     }
 
     private boolean isOutOfBounds(Point point) {
         return point.x < 0 || point.x >= width || point.y < 0 || point.y >= height;
     }
 
-    private void putPlayerOnBoard(PlayerAction playerAction) {
-        gameState = GameState.InProgress;
+    private void startRound() {
+        currentRound = new Round();
+        roundsRepository.save(currentRound);
+        for (User user : usersRepository.findAll())
+            if (playersOnServer.contains(user.getUserName()))
+                currentRound.getAllPlayers().add(user.getUserStatistics());
+        generateMap();
+        playersPositions = new HashMap<>();
+        for (String playerName : playersOnServer)
+            putPlayerOnBoard(playerName);
+    }
+
+    private void endRound() {
+        if (currentRound != null) {
+            currentRound.setRoundEnd(LocalDateTime.now());
+            roundsRepository.save(currentRound);
+            currentRound = null;
+        }
+        if (playersOnServer.size() >= 2)
+            startRound();
+        else
+            gameState = GameState.WaitingForPlayers;
+    }
+
+    private void playerDisconnect(PlayerAction playerAction) {
+        removePlayerFromBoard(playerAction.getPlayerName());
+        playersOnServer.remove(playerAction.getPlayerName());
+        if (playersOnServer.size() < 2)
+            endRound();
+
+    }
+
+    private void playerConnect(PlayerAction playerAction) {
+        String playerName = playerAction.getPlayerName();
+        playersOnServer.add(playerName);
+        if (gameState == GameState.WaitingForPlayers)
+            putPlayerOnBoard(playerAction.getPlayerName());
+        if (playersOnServer.size() >= 2)
+            gameState = GameState.InProgress;
+        if (gameState == GameState.InProgress && currentRound == null)
+            startRound();
+    }
+
+    private void putPlayerOnBoard(String playerName) {
+        //gameState = GameState.InProgress;
         Random random = new Random();
         int x = 0;
         int y = 0;
@@ -207,7 +291,7 @@ public class GameBoard implements IGameBoard {
             x = random.nextInt(width);
             y = random.nextInt(height);
         } while (map[x][y] != null && !map[x][y].canPlayerPass());
-        IPlayer player = new Player(playerAction.getPlayerName());
+        IPlayer player = new Player(playerName);
         playersPositions.put(player, new Point(x, y));
     }
 

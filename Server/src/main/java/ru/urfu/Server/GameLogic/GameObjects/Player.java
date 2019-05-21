@@ -7,6 +7,9 @@ public class Player implements IGameObject, IPlayer {
     private int health;
     private String type = "player";
     private Direction direction = Direction.Up;
+    private int killsCount =0;
+    private int firedShotsCount = 0;
+    private int movesCount = 0;
 
     @Override
     public boolean equals(Object o) {
@@ -82,5 +85,35 @@ public class Player implements IGameObject, IPlayer {
     @Override
     public String getName() {
         return name;
+    }
+
+    @Override
+    public int getMovesCount() {
+        return movesCount;
+    }
+
+    @Override
+    public void increaseMovesCount() {
+        movesCount++;
+    }
+
+    @Override
+    public int getFiredShotsCount() {
+        return firedShotsCount;
+    }
+
+    @Override
+    public void increaseFiredShotsCount() {
+        firedShotsCount++;
+    }
+
+    @Override
+    public int getKillsCount() {
+        return killsCount;
+    }
+
+    @Override
+    public void increaseKillsCount() {
+        killsCount++;
     }
 }

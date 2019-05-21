@@ -2,6 +2,7 @@ package ru.urfu.Server.Models;
 
 import javax.persistence.*;
 import java.time.LocalDateTime;
+import java.util.HashSet;
 import java.util.Set;
 
 @Entity
@@ -12,10 +13,23 @@ public class Round {
     private Long id;
     private LocalDateTime roundStart;
     private LocalDateTime roundEnd;
-    private Integer firedShotsCount;
-    private Integer madeMovesCount;
-    @ManyToMany(mappedBy = "playedRounds")
-    private Set<UserStatistics> allPlayers;
+    private Integer firedShotsCount = 0;
+    private Integer madeMovesCount = 0;
+    @ManyToMany
+    @JoinTable(
+            name ="players_rounds",
+            joinColumns = @JoinColumn(name = "round_id"),
+            inverseJoinColumns = @JoinColumn(name = "player_id")
+    )
+    private Set<UserStatistics> allPlayers = new HashSet<>();
+
+    public Round() {
+        roundStart = LocalDateTime.now();
+    }
+
+    @ManyToOne(cascade = CascadeType.ALL)
+    @JoinColumn(name = "winner_id")
+    private UserStatistics winner;
 
     public Set<UserStatistics> getAllPlayers() {
         return allPlayers;
@@ -32,10 +46,6 @@ public class Round {
     public void setWinner(UserStatistics winner) {
         this.winner = winner;
     }
-
-    @ManyToOne
-    @JoinColumn(name = "winner_id")
-    private UserStatistics winner;
 
     public Long getId() {
         return id;

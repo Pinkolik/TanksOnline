@@ -37,8 +37,8 @@ public class AuthorizationSessionHandler extends StompSessionHandlerAdapter {
 
     @Override
     public void afterConnected(StompSession session, StompHeaders connectedHeaders) {
-        session.subscribe("/topic/auth_reply", this);
-        logger.info("Subscribed to /topic/auth_reply");
+        session.subscribe("/user/" + logInForm.getUserName() + "/auth_reply", this);
+        logger.info("Subscribed to /user/" + logInForm.getUserName() + "/auth_reply");
         try {
             logInForm.sendAuthorizeRequest();
         } catch (UnsupportedEncodingException e) {

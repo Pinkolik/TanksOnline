@@ -1,6 +1,8 @@
 package ru.urfu.Server;
 
+import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.repository.query.Param;
 import org.springframework.messaging.handler.annotation.MessageMapping;
 import org.springframework.messaging.handler.annotation.SendTo;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
@@ -12,17 +14,25 @@ import ru.urfu.Server.GameLogic.GameBoard.IGameBoard;
 import ru.urfu.Server.GameLogic.GameBoard.PlayerAction;
 import ru.urfu.Server.Models.User;
 import ru.urfu.Server.Models.UserStatistics;
+import ru.urfu.Server.Repositories.RoundsRepository;
 import ru.urfu.Server.Repositories.UsersRepository;
+import ru.urfu.Server.Repositories.UsersStatisticsRepository;
+
+import javax.websocket.server.PathParam;
 
 @EnableScheduling
 @Controller
 public class GameController {
-
-    private IGameBoard gameBoard = new GameBoard();
     @Autowired
     private UsersRepository usersRepository;
     @Autowired
+    private UsersStatisticsRepository userStatisticsRepository;
+    @Autowired
+    private RoundsRepository roundsRepository;
+    @Autowired
     private SimpMessagingTemplate simpMessagingTemplate;
+    @Autowired
+    private IGameBoard gameBoard;
 
     @MessageMapping("/action")
     @SendTo("/topic/gameboard")
@@ -39,9 +49,10 @@ public class GameController {
         simpMessagingTemplate.convertAndSend("/topic/gameboard", gameBoard);
     }
 
-    @MessageMapping("/authorize")
-    @SendTo("/topic/auth_reply")
+    @MessageMapping("/{username}/authorize")
+    @SendTo("/user/{username}/auth_reply")
     public AuthorizationReply authorize(User user) {
+        System.out.println("Authorization request");
         if (gameBoard.getPlayersPositions().keySet().stream().anyMatch(p -> p.getName().equals(user.getUserName())))
             return new AuthorizationReply(AuthorizationStatus.AlreadyLoggedIn, null);
         User find = usersRepository.findByUserNameAndAndHashedPassword(user.getUserName(), user.getHashedPassword());
@@ -50,6 +61,10 @@ public class GameController {
         else if (usersRepository.findByUserName(user.getUserName()) != null)
             return new AuthorizationReply(AuthorizationStatus.WrongPassword, null);
         else {
+            UserStatistics userStatistics = new UserStatistics();
+            userStatistics.setUser(user);
+            user.setUserStatistics(userStatistics);
+            userStatisticsRepository.save(userStatistics);
             usersRepository.save(user);
             return new AuthorizationReply(AuthorizationStatus.SuccessfulSignUp, gameBoard.getGameToken());
         }
