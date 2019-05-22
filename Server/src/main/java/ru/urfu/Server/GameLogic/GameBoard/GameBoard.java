@@ -201,6 +201,9 @@ public class GameBoard implements IGameBoard {
 
     private void updateProjectilesPositions() {
         Set<String> playersToIncreaseKillsCount = new HashSet<>();
+        if (projectilesPositions == null)
+            return;
+        try{
         for (Map.Entry<IProjectile, Point> entry : projectilesPositions.entrySet()) {
             IProjectile projectile = entry.getKey();
             Direction projectileDirection = projectile.getDirection();
@@ -241,6 +244,11 @@ public class GameBoard implements IGameBoard {
                 projectilesPositions.remove(projectile);
             } else
                 projectilesPositions.remove(projectile);
+        }}
+        catch (ConcurrentModificationException exception)
+        {
+            System.out.println(exception);
+            return;
         }
         for (IPlayer player : playersPositions.keySet())
             for (String playerNameToIncreaseKills : playersToIncreaseKillsCount)
